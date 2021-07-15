@@ -81,22 +81,6 @@ ENV PATH="${PATH}:/root/.composer/vendor/bin"
 
 WORKDIR /srv/app
 
-# Allow to choose skeleton
-ARG SKELETON="symfony/skeleton"
-ENV SKELETON ${SKELETON}
-
-# Allow to use development versions of Symfony
-ARG STABILITY="stable"
-ENV STABILITY ${STABILITY}
-
-# Allow to select skeleton version
-ARG SYMFONY_VERSION=""
-ENV SYMFONY_VERSION ${SYMFONY_VERSION}
-
-# Download the Symfony skeleton and leverage Docker cache layers
-RUN composer create-project "${SKELETON} ${SYMFONY_VERSION}" . --stability=$STABILITY --prefer-dist --no-dev --no-progress --no-interaction; \
-	composer clear-cache
-
 ###> recipes ###
 ###< recipes ###
 
@@ -113,33 +97,3 @@ VOLUME /srv/app/var
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
-
-FROM caddy:${CADDY_VERSION}-builder-alpine AS symfony_caddy_builder
-
-RUN xcaddy build \
-	--with github.com/dunglas/mercure \
-	--with github.com/dunglas/mercure/caddy \
-	--with github.com/dunglas/vulcain \
-	--with github.com/dunglas/vulcain/caddy
-
-FROM caddy:${CADDY_VERSION} AS symfony_caddy
-
-WORKDIR /srv/app
-
-COPY --from=dunglas/mercure:v0.11 /srv/public /srv/mercure-assets/
-COPY --from=symfony_caddy_builder /usr/bin/caddy /usr/bin/caddy
-COPY --from=symfony_php /srv/app/public public/
-COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
-
-FROM symfony_php as symfony_php_debug
-
-
-ARG XDEBUG_VERSION=3.0.4
-RUN set -eux; \
-		apk add --no-cache --virtual .build-deps $PHPIZE_DEPS; \
-		pecl install xdebug-$XDEBUG_VERSION; \
-		docker-php-ext-enable xdebug; \
-		echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
-        echo "xdebug.client_host = host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
-		apk del .build-deps
-
