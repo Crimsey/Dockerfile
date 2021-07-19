@@ -87,12 +87,8 @@ WORKDIR /srv/app
 COPY . .
 
 RUN set -eux; \
-	mkdir -p var/cache var/log; \
-	composer install --prefer-dist --no-dev --no-progress --no-scripts --no-interaction; \
-	composer dump-autoload --classmap-authoritative --no-dev; \
-	composer symfony:dump-env prod; \
-	composer run-script --no-dev post-install-cmd; \
-	chmod +x bin/console; sync
+	mkdir -p var/cache var/log;
+
 VOLUME /srv/app/var
 
 ENTRYPOINT ["docker-entrypoint"]
