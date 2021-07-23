@@ -71,6 +71,11 @@ COPY docker/php/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 COPY docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 RUN chmod +x /usr/local/bin/docker-entrypoint
 
+RUN set -eux
+RUN apk update
+RUN	apk add poppler-utils
+RUN apk add zbar
+
 VOLUME /var/run/php
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -94,3 +99,4 @@ VOLUME /srv/app/var
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
+
